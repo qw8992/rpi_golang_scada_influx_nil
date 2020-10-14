@@ -17,38 +17,38 @@ type RemapFormatV2 struct {
 	GatewayID        string     `json:"gateway"`
 	MacID            string     `json:"mac"`
 	Time             string     `json:"time"`
-	Temp             string     `json:"Temp"`
-	Humid            string     `json:"Humid"`
-	ReactivePower    string     `json:"ReactivePower"`
-	ActiveConsum     string     `json:"ActiveConsum"`
-	ReactiveConsum   string     `json:"ReactiveConsum"`
-	Power            string     `json:"Power"`
-	RunningHour      string     `json:"RunningHour"`
-	TotalRunningHour string     `json:"TotalRunningHour"`
-	MCCounter        string     `json:"MCCounter"`
-	PT100            string     `json:"PT100"`
-	FaultNumber      string     `json:"FaultNumber"`
-	OverCurrR        string     `json:"OverCurrR"`
-	OverCurrS        string     `json:"OverCurrS"`
-	OverCurrT        string     `json:"OverCurrT"`
-	FaultRST         string     `json:"FaultRST"`
+	Temp             float64     `json:"Temp"`
+	Humid            float64     `json:"Humid"`
+	ReactivePower    float64     `json:"ReactivePower"`
+	ActiveConsum     float64     `json:"ActiveConsum"`
+	ReactiveConsum   float64     `json:"ReactiveConsum"`
+	Power            float64     `json:"Power"`
+	RunningHour      float64     `json:"RunningHour"`
+	TotalRunningHour float64     `json:"TotalRunningHour"`
+	MCCounter        float64     `json:"MCCounter"`
+	PT100            float64     `json:"PT100"`
+	FaultNumber      float64     `json:"FaultNumber"`
+	OverCurrR        float64     `json:"OverCurrR"`
+	OverCurrS        float64     `json:"OverCurrS"`
+	OverCurrT        float64     `json:"OverCurrT"`
+	FaultRST         float64     `json:"FaultRST"`
 	Values           []Depth2V1 `json:"Values"`
 }
 
 type Depth2V1 struct {
 	Time        string `json:"time"`
-	Status      string `json:"status"`
-	Curr        string `json:"Curr"`
-	CurrR       string `json:"CurrR"`
-	CurrS       string `json:"CurrS"`
-	CurrT       string `json:"CurrT"`
-	Volt        string `json:"Volt"`
-	VoltR       string `json:"VoltR"`
-	VoltS       string `json:"VoltS"`
-	VoltT       string `json:"VoltT"`
-	ActivePower string `json:"ActivePower"`
-	Ground      string `json:"Ground"`
-	V420        string `json:"420"`
+	Status      bool `json:"status"`
+	Curr        float64 `json:"Curr"`
+	CurrR       float64 `json:"CurrR"`
+	CurrS       float64 `json:"CurrS"`
+	CurrT       float64 `json:"CurrT"`
+	Volt        float64 `json:"Volt"`
+	VoltR       float64 `json:"VoltR"`
+	VoltS       float64 `json:"VoltS"`
+	VoltT       float64 `json:"VoltT"`
+	ActivePower float64 `json:"ActivePower"`
+	Ground      float64 `json:"Ground"`
+	V420        float64 `json:"420"`
 }
 
 // UYeGDataCollection 함수는 데이터를 수집하는 함수입니다
@@ -67,13 +67,13 @@ func UYeGDataCollection(client *uyeg.ModbusClient, collChan chan<- map[string]in
 			if readData == nil {
 				Mili := 0
 				var vT string
-				device := DeviceCount()
+//				device := DeviceCount()
 				rpFormat := &RemapFormatV2{}
 				rpFormat.Values = []Depth2V1{}
 				var TimeFormat = "2006-01-02 15:04:05.000"
 				var loc, _ = time.LoadLocation("Asia/Seoul")
 
-				for i := device * 30; i > 0; i = i - 30 {
+				for i := 0; i < 10 ; i++  {
 					value := Depth2V1{}
 
 					t := fmt.Sprint(time.Now().In(loc))
@@ -84,20 +84,24 @@ func UYeGDataCollection(client *uyeg.ModbusClient, collChan chan<- map[string]in
 						vT = fmt.Sprint(bSecT, ".", Mili*100)
 					}
 					value.Time = vT
-					value.Curr = "0"
-					value.CurrR = "0"
-					value.CurrS = "0"
-					value.CurrT = "0"
-					value.Volt = "0"
-					value.VoltR = "0"
-					value.VoltS = "0"
-					value.VoltT = "0"
-					value.ActivePower = "0"
-					value.Ground = "0"
-					value.V420 = "0"
-					value.Status = "false"
+					value.Curr = 0.0
+					value.CurrR = 0.0
+					value.CurrS = 0.0
+					value.CurrT = 0.0
+					value.Volt = 0.0
+					value.VoltR = 0.0
+					value.VoltS = 0.0
+					value.VoltT = 0.0
+					value.ActivePower = 0.0
+					value.Ground = 0.0
+					value.V420 = 0.0
+					value.Status = false
 
 					rpFormat.Values = append(rpFormat.Values, value)
+					Mili = Mili + 1
+					if Mili == 10 {
+						Mili = 0
+					}
 				}
 				t := fmt.Sprint(time.Now().In(loc))
 
@@ -106,26 +110,25 @@ func UYeGDataCollection(client *uyeg.ModbusClient, collChan chan<- map[string]in
 				rpFormat.Version = "2"
 				rpFormat.GatewayID = client.Device.GatewayId
 				rpFormat.MacID = client.Device.MacId
-				rpFormat.Temp = "0"
-				rpFormat.Humid = "0"
-				rpFormat.ActiveConsum = "0"
-				rpFormat.RunningHour = "0"
-				rpFormat.OverCurrR = "0"
-				rpFormat.OverCurrS = "0"
-				rpFormat.OverCurrT = "0"
-				rpFormat.Power = "0"
-				rpFormat.ReactiveConsum = "0"
-				rpFormat.ReactivePower = "0"
-				rpFormat.TotalRunningHour = "0"
-				rpFormat.MCCounter = "0"
-				rpFormat.PT100 = "0"
-				rpFormat.FaultNumber = "0"
-				rpFormat.FaultRST = "0"
+				rpFormat.Temp = 0.0
+				rpFormat.Humid = 0.0
+				rpFormat.ActiveConsum = 0.0
+				rpFormat.RunningHour = 0.0
+				rpFormat.OverCurrR = 0.0
+				rpFormat.OverCurrS = 0.0
+				rpFormat.OverCurrT = 0.0
+				rpFormat.Power = 0.0
+				rpFormat.ReactiveConsum = 0.0
+				rpFormat.ReactivePower = 0.0
+				rpFormat.TotalRunningHour = 0.0
+				rpFormat.MCCounter = 0.0
+				rpFormat.PT100 = 0.0
+				rpFormat.FaultNumber = 0.0
+				rpFormat.FaultRST = 0.0
 
 				jsonBytes, _ := json.Marshal(rpFormat)
 				dataSecond := make(map[string]interface{})
 				json.Unmarshal(jsonBytes, &dataSecond)
-				fmt.Println(dataSecond)
 
 				nullData <- dataSecond
 
@@ -158,7 +161,7 @@ func UYeGDataCollection(client *uyeg.ModbusClient, collChan chan<- map[string]in
 						}
 					}
 				}
-				time.Sleep(time.Duration(client.Device.RetryCycle) * time.Millisecond)
+				time.Sleep(time.Duration(client.Device.RetryCycle) * time.Millisecond * 10)
 				ticker = time.NewTicker(10 * time.Millisecond)
 				continue
 			} else {

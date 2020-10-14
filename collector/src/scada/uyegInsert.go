@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 	"time"
-
+	"fmt"
 	client "github.com/Heo-youngseo/influxdb1-client/v2"
 )
 
@@ -27,7 +27,7 @@ func influxDataInsert(chInserData chan map[string]interface{}, chnull chan map[s
 
 		case <-chnull:
 			c := influxDBClient()
-			createMetrics(c, chInserData)
+			createMetrics(c, chnull)
 		}
 	}
 }
@@ -41,6 +41,7 @@ func influxDBClient() client.Client {
 		Timeout:  10 * time.Second,
 	})
 	if err != nil {
+		fmt.Println("influxDBClient")
 		log.Fatalln("Error: ", err)
 	}
 	return c
@@ -58,6 +59,7 @@ func createMetrics(c client.Client, chInserData chan map[string]interface{}) {
 			})
 
 			if err != nil {
+				fmt.Println("create1")
 				log.Fatalln("Error: ", err)
 			}
 
@@ -115,6 +117,7 @@ func createMetrics(c client.Client, chInserData chan map[string]interface{}) {
 					)
 
 					if err != nil {
+						fmt.Println("Create")
 						log.Fatalln("Error: ", err)
 					}
 
