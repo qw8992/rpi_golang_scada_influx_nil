@@ -9,7 +9,7 @@ import (
 	"scada/uyeg"
 )
 
-func UYeGTransfer(client *uyeg.ModbusClient, tfChan <-chan []interface{}, chInsertData chan map[string]interface{}) {
+func UYeGTransfer(client *uyeg.ModbusClient, tfChan <-chan []interface{}, chInsertData chan map[string]interface{}, nullData chan map[string]interface{}, chnull chan map[string]interface{}) {
 	for {
 		select {
 		case <-client.Done3:
@@ -27,7 +27,10 @@ func UYeGTransfer(client *uyeg.ModbusClient, tfChan <-chan []interface{}, chInse
 				// fmt.Println(string(jsonBytes))
 
 				chInsertData <- dataSecond
+
 			}
+		case Dnull := <-nullData:
+			chInsertData <- Dnull
 		}
 	}
 }

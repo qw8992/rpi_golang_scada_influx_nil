@@ -33,9 +33,11 @@ func UYeGStartFunc(client *uyeg.ModbusClient) {
 	collChan := make(chan map[string]interface{}, 20)
 	tfChan := make(chan []interface{}, 20)
 	chInsertData := make(chan map[string]interface{})
+	nullData := make(chan map[string]interface{})
+	chnull := make(chan map[string]interface{})
 
-	go influxDataInsert(chInsertData)
-	go UYeGTransfer(client, tfChan, chInsertData)
+	go influxDataInsert(chInsertData, chnull)
+	go UYeGTransfer(client, tfChan, chInsertData, nullData, chnull)
 	go UYeGProcessing(client, collChan, tfChan)
-	go UYeGDataCollection(client, collChan)
+	go UYeGDataCollection(client, collChan, nullData)
 }

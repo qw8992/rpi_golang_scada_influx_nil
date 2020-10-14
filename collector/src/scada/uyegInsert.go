@@ -10,25 +10,32 @@ import (
 	client "github.com/Heo-youngseo/influxdb1-client/v2"
 )
 
+//influxDB 사용하기 위한 모듈을 import, DB 연결 정보를 전역변수로 선언
 const (
-	database = "Test"
+	database = "UYeG_influx"
 	username = "its"
 	password = "its@1234"
 )
 
-func influxDataInsert(chInserData chan map[string]interface{}) {
+//influxDB 연결 & 수집된 데이터를 InfluxDB에 저장하는 함수 실행
+func influxDataInsert(chInserData chan map[string]interface{}, chnull chan map[string]interface{}) {
 	for {
 		select {
 		case <-chInserData:
+			c := influxDBClient()
+			createMetrics(c, chInserData)
+
+		case <-chnull:
 			c := influxDBClient()
 			createMetrics(c, chInserData)
 		}
 	}
 }
 
+//influxDB에 연결시키는 함수
 func influxDBClient() client.Client {
 	c, err := client.NewHTTPClient(client.HTTPConfig{
-		Addr:     "http://106.255.236.186:8084/influxdb/",
+		Addr:     "http://192.168.100.92:8086",
 		Username: username,
 		Password: password,
 		Timeout:  10 * time.Second,
@@ -39,6 +46,7 @@ func influxDBClient() client.Client {
 	return c
 }
 
+//수집한 데이터를 influxdb에 저장하는 함수, 데이터를 받으면 새로운 배치포인트를 만듦
 func createMetrics(c client.Client, chInserData chan map[string]interface{}) {
 
 	for {
@@ -53,6 +61,7 @@ func createMetrics(c client.Client, chInserData chan map[string]interface{}) {
 				log.Fatalln("Error: ", err)
 			}
 
+			//1초 데이터의 키를 오름차순으로 정렬하여 string으로 조인하고 변경해야할 이름을 수정
 			values := data["Values"]
 
 			//1초 데이터 key 오름차순으로 정렬
@@ -76,20 +85,15 @@ func createMetrics(c client.Client, chInserData chan map[string]interface{}) {
 				tempStrMilli = strings.Replace(tempStrMilli, "420", "`420`", 1)
 
 				//insert문 생성
+				//데이터를 차례대로 불러와서 fields에 추가, 추가 할때 tag로는 mac주소와 gatewayID로 한다(기본키 개념)
 				for i := 0; i < s.Len(); i++ {
 
 					dataMilli := s.Index(i).Interface().(map[string]interface{})
 
-					//clusterIndex := rand.Intn(len(dataMilli))
 					tags := map[string]string{
 						"mac":     data["mac"].(string),
 						"gateway": data["gateway"].(string),
 					}
-
-					// fields := map[string]interface{}{
-					// 	"cpu_usage":  rand.Float64() * 100.0,
-					// 	"disk_usage": rand.Float64() * 100.0,
-					// }
 
 					fields := make(map[string]interface{})
 					for j := 0; j < len(arrKeySec); j++ {
@@ -100,12 +104,9 @@ func createMetrics(c client.Client, chInserData chan map[string]interface{}) {
 						fields[keyMilli[j]] = dataMilli[keyMilli[j]]
 					}
 
+					//마지막으로 string으로 된 시간을 time형으로 변경하고 point를 추가한 후 batchpoint에 저장
 					date := dataMilli["time"].(string)
 					t, err := time.Parse("2006-01-02 15:04:05.000", date)
-					//nowSec := t.UnixNano()
-					//t, err := time.Parse(time.RFC3339, date)
-					//fmt.Println(t)
-					//date.millisecond(t)
 					point, err := client.NewPoint(
 						"SmartEOCR",
 						tags,
@@ -120,8 +121,8 @@ func createMetrics(c client.Client, chInserData chan map[string]interface{}) {
 					bp.AddPoint(point)
 				}
 			}
-			//_ = bp
-			//fmt.Println(bp)
+
+			//influxDB에 Insert
 			go func() {
 				err = c.Write(bp)
 				if err != nil {
@@ -132,6 +133,7 @@ func createMetrics(c client.Client, chInserData chan map[string]interface{}) {
 	}
 }
 
+// map의 key를 오름차순으로 재정렬하여 오름차순한 key 배열을 반환하는 함수
 func orderKey(m map[string]interface{}) []string {
 	keys := make([]string, 0, len(m))
 	for key := range m {
